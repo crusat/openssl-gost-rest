@@ -42,7 +42,13 @@ const signHandler = (body, callback) => {
                 return;
             }
 
-            callback(stdout.replace('\n', ''))
+            let out = stdout.replace(/\n/, '')
+            // url safe base64
+            out = out.replace(/=/g, '')
+            out = out.replace(/\+/g, '-')
+            out = out.replace(/\//g, '_')
+            // out
+            callback(out)
             fs.unlinkSync(randomFileName);
         });
     });
@@ -50,7 +56,16 @@ const signHandler = (body, callback) => {
 
 const verifyHandler = (body, signature, callback) => {
     const randomFileName = './tmp/' + getRandomString();
-    fs.writeFile(randomFileName + '.sig', signature, function (err, data) {
+    let fixedSignature = signature.replace(/-/g, '+')
+    fixedSignature = fixedSignature.replace(/_/g, '/')
+    // make padding
+    let correctSignature = fixedSignature.length % 4 !== 0;
+    while (correctSignature) {
+        fixedSignature += '=';
+        correctSignature = fixedSignature.length % 4 !== 0;
+    }
+    // do it
+    fs.writeFile(randomFileName + '.sig', fixedSignature, function (err, data) {
         if (err) {
             console.log(err);
             callback('FAIL')
@@ -74,6 +89,7 @@ const verifyHandler = (body, signature, callback) => {
                 exec('openssl dgst -md_gost12_256 -verify '+ pubkeyPath +' -signature '+randomFileName+'.sig.bin '+randomFileName, (err, stdout, stderr) => {
                     if (err) {
                         console.log('Error', err);
+                        callback('FAIL')
                         return;
                     }
 
