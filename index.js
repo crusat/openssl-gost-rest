@@ -35,21 +35,22 @@ const signHandler = (body, callback) => {
             return;
         }
 
-        exec('openssl dgst -md_gost12_256 -sign '+privatekeyPath+' '+randomFileName+' | base64', (err, stdout, stderr) => {
+        exec('openssl smime -sign -binary -md md_gost12_256 -in '+randomFileName+' -signer '+certificatePath+' -inkey '+privatekeyPath+' -outform DER -out '+randomFileName+'.p7b && cat '+randomFileName+'.p7b | base64', (err, stdout, stderr) => {
             if (err) {
                 console.log('Error', err);
                 callback('FAIL')
                 return;
             }
 
-            let out = stdout.replace(/\n/, '')
+            let out = stdout.replace(/[\n\r]/g, '')
             // url safe base64
             out = out.replace(/=/g, '')
             out = out.replace(/\+/g, '-')
             out = out.replace(/\//g, '_')
             // out
             callback(out)
-            fs.unlinkSync(randomFileName);
+            // fs.unlinkSync(randomFileName);
+            // fs.unlinkSync(randomFileName + '.p7b');
         });
     });
 }
