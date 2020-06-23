@@ -35,7 +35,9 @@ const signHandler = (body, callback) => {
             return;
         }
 
-        exec('openssl smime -sign -binary -md md_gost12_256 -in '+randomFileName+' -signer '+certificatePath+' -inkey '+privatekeyPath+' -outform DER -out '+randomFileName+'.p7b && cat '+randomFileName+'.p7b | base64', (err, stdout, stderr) => {
+        let cmd = 'cat '+randomFileName+' | openssl smime -sign -binary -outform DER -noattr -signer '+certificatePath+' -inkey '+privatekeyPath+' -out '+randomFileName+'.p7b && cat '+randomFileName+'.p7b | base64';
+        console.log(cmd);
+        exec(cmd, (err, stdout, stderr) => {
             if (err) {
                 console.log('Error', err);
                 callback('FAIL')
